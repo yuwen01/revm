@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod burntpix;
+pub mod optimism;
 pub mod snailtracer;
 pub mod transfer;
 
@@ -9,6 +10,7 @@ use clap::{Parser, ValueEnum};
 pub enum BenchName {
     Analysis,
     Burntpix,
+    Optimism,
     Snailtracer,
     Transfer,
 }
@@ -26,6 +28,7 @@ impl Cmd {
         match self.name {
             BenchName::Analysis => analysis::run(),
             BenchName::Burntpix => burntpix::run(),
+            BenchName::Optimism => optimism::run(),
             BenchName::Snailtracer => snailtracer::run(),
             BenchName::Transfer => transfer::run(),
         }
