@@ -79,17 +79,17 @@ pub fn run() {
     let out = evm.transact().unwrap();
 
     println!("gas used: {:?}", out.result.gas_used());
-    let expected_configurable_fee = U256::from(2 * out.result.gas_used() + 5);
+    let expected_operator_fee = U256::from(2 * out.result.gas_used() + 5);
 
     // Check that the account balance was updated correctly.
     assert_eq!(
-        caller_initial_balance - expected_configurable_fee,
+        caller_initial_balance - expected_operator_fee,
         out.state.get(&caller).unwrap().info.balance
     );
 
     // Check that the coinbase was updated correctly.
     assert_eq!(
-        expected_configurable_fee,
+        expected_operator_fee,
         out.state.get(&evm.context.evm.env.block.coinbase).unwrap().info.balance
     );
 }
