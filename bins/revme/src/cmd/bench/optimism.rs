@@ -88,9 +88,8 @@ pub fn run() {
     );
 
     // Check that the coinbase was updated correctly.
-    // assert_eq!()
     assert_eq!(
         expected_configurable_fee,
-        out.state.get(&transact_to).unwrap().info.balance
+        out.state.get(&evm.context.evm.env.block.coinbase).unwrap().info.balance
     );
 }
