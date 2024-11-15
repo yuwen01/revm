@@ -253,32 +253,26 @@ impl<DB: Database> EvmContext<DB> {
                     .clone()
                     .unwrap_or_default();
             }
-            let contract_optional =
-                self.bytecode_cache
-                    .get(&code_hash)
-                    .cloned()
-                    .map(|found_bytecode| {
-                        Contract::new_with_context(
-                            inputs.input.clone(),
-                            found_bytecode.clone(),
-                            Some(code_hash),
-                            inputs,
-                        )
-                    });
-            let contract = contract_optional.unwrap_or_else(|| {
-                let contract = Contract::new_with_context(
+            let contract = match self.bytecode_cache.get(&code_hash) {
+                Some(found_bytecode) => Contract::new_with_context(
                     inputs.input.clone(),
-                    bytecode,
+                    found_bytecode.clone(),
                     Some(code_hash),
                     inputs,
-                );
-                self.bytecode_cache
-                    .insert(code_hash, contract.bytecode.clone());
-                contract
-            });
+                ),
+                None => {
+                    let contract = Contract::new_with_context(
+                        inputs.input.clone(),
+                        bytecode,
+                        Some(code_hash),
+                        inputs,
+                    );
+                    self.bytecode_cache
+                        .insert(code_hash, contract.bytecode.clone());
+                    contract
+                }
+            };
 
-            // let contract =
-            //     Contract::new_with_context(inputs.input.clone(), bytecode, Some(code_hash), inputs);
             // Create interpreter and executes call and push new CallStackFrame.
             Ok(FrameOrResult::new_call_frame(
                 inputs.return_memory_offset.clone(),
