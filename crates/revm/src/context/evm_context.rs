@@ -1,3 +1,4 @@
+use ahash::RandomState;
 use revm_interpreter::CallValue;
 use revm_precompile::PrecompileErrors;
 
@@ -19,7 +20,7 @@ use core::{
     fmt,
     ops::{Deref, DerefMut},
 };
-use std::{boxed::Box, sync::Arc};
+use std::{boxed::Box, collections::HashMap, sync::Arc};
 
 /// EVM context that contains the inner EVM context and precompiles.
 pub struct EvmContext<DB: Database> {
@@ -27,6 +28,8 @@ pub struct EvmContext<DB: Database> {
     pub inner: InnerEvmContext<DB>,
     /// Precompiles that are available for evm.
     pub precompiles: ContextPrecompiles<DB>,
+    /// Bytecode cache, to avoid re-analyzing the same bytecode.
+    pub bytecode_cache: HashMap<B256, Bytecode, RandomState>,
 }
 
 impl<DB: Database + Clone> Clone for EvmContext<DB>
@@ -37,6 +40,7 @@ where
         Self {
             inner: self.inner.clone(),
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: self.bytecode_cache.clone(),
         }
     }
 }
@@ -74,6 +78,7 @@ impl<DB: Database> EvmContext<DB> {
         Self {
             inner: InnerEvmContext::new(db),
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: HashMap::with_hasher(ahash::RandomState::default()),
         }
     }
 
@@ -83,6 +88,7 @@ impl<DB: Database> EvmContext<DB> {
         Self {
             inner: InnerEvmContext::new_with_env(db, env),
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: HashMap::with_hasher(ahash::RandomState::default()),
         }
     }
 
@@ -94,6 +100,7 @@ impl<DB: Database> EvmContext<DB> {
         EvmContext {
             inner: self.inner.with_db(db),
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: self.bytecode_cache.clone(),
         }
     }
 
@@ -246,9 +253,32 @@ impl<DB: Database> EvmContext<DB> {
                     .clone()
                     .unwrap_or_default();
             }
+            let contract_optional =
+                self.bytecode_cache
+                    .get(&code_hash)
+                    .cloned()
+                    .map(|found_bytecode| {
+                        Contract::new_with_context(
+                            inputs.input.clone(),
+                            found_bytecode.clone(),
+                            Some(code_hash),
+                            inputs,
+                        )
+                    });
+            let contract = contract_optional.unwrap_or_else(|| {
+                let contract = Contract::new_with_context(
+                    inputs.input.clone(),
+                    bytecode,
+                    Some(code_hash),
+                    inputs,
+                );
+                self.bytecode_cache
+                    .insert(code_hash, contract.bytecode.clone());
+                contract
+            });
 
-            let contract =
-                Contract::new_with_context(inputs.input.clone(), bytecode, Some(code_hash), inputs);
+            // let contract =
+            //     Contract::new_with_context(inputs.input.clone(), bytecode, Some(code_hash), inputs);
             // Create interpreter and executes call and push new CallStackFrame.
             Ok(FrameOrResult::new_call_frame(
                 inputs.return_memory_offset.clone(),
@@ -533,6 +563,7 @@ pub(crate) mod test_utils {
                 l1_block_info: None,
             },
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: HashMap::with_hasher(ahash::RandomState::default()),
         }
     }
 
@@ -548,6 +579,7 @@ pub(crate) mod test_utils {
                 l1_block_info: None,
             },
             precompiles: ContextPrecompiles::default(),
+            bytecode_cache: HashMap::with_hasher(ahash::RandomState::default()),
         }
     }
 }
