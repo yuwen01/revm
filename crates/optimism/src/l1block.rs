@@ -40,6 +40,10 @@ const ECOTONE_L1_BLOB_BASE_FEE_SLOT: U256 = U256::from_limbs([7u64, 0, 0, 0]);
 /// offsets [BASE_FEE_SCALAR_OFFSET] and [BLOB_BASE_FEE_SCALAR_OFFSET] respectively.
 const ECOTONE_L1_FEE_SCALARS_SLOT: U256 = U256::from_limbs([3u64, 0, 0, 0]);
 
+/// This storage slot stores the 32-bit operatorFeeScalar and operatorFeeConstant attributes at
+/// offsets [OPERATOR_FEE_SCALAR_OFFSET] and [OPERATOR_FEE_CONSTANT_OFFSET] respectively.
+const OPERATOR_FEE_SCALARS_SLOT: U256 = U256::from_limbs([8u64, 0, 0, 0]);
+
 /// An empty 64-bit set of scalar values.
 const EMPTY_SCALARS: [u8; 8] = [0u8; 8];
 
@@ -143,17 +147,23 @@ impl L1BlockInfo {
                     ..Default::default()
                 })
             } else {
+                let operator_fee_scalars = db
+                    .storage(L1_BLOCK_CONTRACT, OPERATOR_FEE_SCALARS_SLOT)?
+                    .to_be_bytes::<32>();
+
                 // Post-isthmus L1 block info
                 // The `operator_fee_scalar` is stored as a big endian u32 at
                 // OPERATOR_FEE_SCALAR_OFFSET.
                 let operator_fee_scalar = U256::from_be_slice(
-                    l1_fee_scalars[OPERATOR_FEE_SCALAR_OFFSET..OPERATOR_FEE_SCALAR_OFFSET + 4]
+                    operator_fee_scalars
+                        [OPERATOR_FEE_SCALAR_OFFSET..OPERATOR_FEE_SCALAR_OFFSET + 4]
                         .as_ref(),
                 );
                 // The `operator_fee_constant` is stored as a big endian u64 at
                 // OPERATOR_FEE_CONSTANT_OFFSET.
                 let operator_fee_constant = U256::from_be_slice(
-                    l1_fee_scalars[OPERATOR_FEE_CONSTANT_OFFSET..OPERATOR_FEE_CONSTANT_OFFSET + 8]
+                    operator_fee_scalars
+                        [OPERATOR_FEE_CONSTANT_OFFSET..OPERATOR_FEE_CONSTANT_OFFSET + 8]
                         .as_ref(),
                 );
                 Ok(L1BlockInfo {
