@@ -53,6 +53,9 @@ pub const L1_FEE_RECIPIENT: Address = address!("42000000000000000000000000000000
 /// The address of the base fee recipient.
 pub const BASE_FEE_RECIPIENT: Address = address!("4200000000000000000000000000000000000019");
 
+/// The address of the operator fee recipient.
+pub const OPERATOR_FEE_RECIPIENT: Address = address!("420000000000000000000000000000000000001B");
+
 /// The address of the L1Block contract.
 pub const L1_BLOCK_CONTRACT: Address = address!("4200000000000000000000000000000000000015");
 
