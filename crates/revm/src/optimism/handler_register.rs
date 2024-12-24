@@ -170,6 +170,12 @@ pub fn reimburse_caller<SPEC: Spec, EXT, DB: Database>(
     gas: &Gas,
 ) -> Result<(), EVMError<DB::Error>> {
     mainnet::reimburse_caller::<SPEC, EXT, DB>(context, gas)?;
+
+    let caller_account = context
+        .evm
+        .inner
+        .journaled_state
+        .load_account(context.evm.inner.env.tx.caller, &mut context.evm.inner.db)?;
     let operator_fee_refund = context
         .evm
         .inner
@@ -178,11 +184,6 @@ pub fn reimburse_caller<SPEC: Spec, EXT, DB: Database>(
         .expect("L1BlockInfo should be loaded")
         .operator_fee_refund(gas, SPEC::SPEC_ID);
 
-    let caller_account = context
-        .evm
-        .inner
-        .journaled_state
-        .load_account(context.evm.inner.env.tx.caller, &mut context.evm.inner.db)?;
     // In additional to the normal transaction fee, additionally refund the caller
     // for the operator fee.
     caller_account.data.info.balance = caller_account
