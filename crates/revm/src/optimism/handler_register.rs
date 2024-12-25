@@ -369,17 +369,14 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
             .mul(U256::from(gas.spent() - gas.refunded() as u64));
 
         // Send the operator fee of the transaction to the coinbase.
-        let operator_fee_vault_account = context
+        let mut operator_fee_vault_account = context
             .evm
             .inner
             .journaled_state
             .load_account(OPERATOR_FEE_RECIPIENT, &mut context.evm.inner.db)?;
 
-        operator_fee_vault_account.data.info.balance = operator_fee_vault_account
-            .data
-            .info
-            .balance
-            .saturating_add(operator_fee_cost);
+        operator_fee_vault_account.mark_touch();
+        operator_fee_vault_account.data.info.balance += operator_fee_cost;
     }
     Ok(())
 }
