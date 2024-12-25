@@ -1,5 +1,4 @@
 use revm_interpreter::Gas;
-use revm_precompile::B256;
 
 use crate::optimism::fast_lz::flz_compress_len;
 use crate::primitives::{address, db::Database, Address, SpecId, U256};
@@ -132,7 +131,6 @@ impl L1BlockInfo {
                 .transpose()?;
 
             if !spec_id.is_enabled_in(SpecId::ISTHMUS) {
-                println!("ISTHMUS IS NOT ENABLED");
                 // Pre-isthmus L1 block info
                 Ok(L1BlockInfo {
                     l1_base_fee,
@@ -144,15 +142,9 @@ impl L1BlockInfo {
                     ..Default::default()
                 })
             } else {
-                println!("ISTHMUS IS ENABLED");
                 let operator_fee_scalars = db
                     .storage(L1_BLOCK_CONTRACT, OPERATOR_FEE_SCALARS_SLOT)?
                     .to_be_bytes::<32>();
-
-                println!(
-                    "OPERATOR FEE SCALARS: {:?}",
-                    B256::from(&operator_fee_scalars)
-                );
 
                 // Post-isthmus L1 block info
                 // The `operator_fee_scalar` is stored as a big endian u32 at
@@ -169,11 +161,6 @@ impl L1BlockInfo {
                         [OPERATOR_FEE_CONSTANT_OFFSET..OPERATOR_FEE_CONSTANT_OFFSET + 8]
                         .as_ref(),
                 );
-
-                println!("OPERATOR FEE SCALAR: {:?}", operator_fee_scalar);
-
-                println!("OPERATOR FEE CONSTANT: {:?}", operator_fee_constant);
-
                 Ok(L1BlockInfo {
                     l1_base_fee,
                     l1_base_fee_scalar,

@@ -342,8 +342,6 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
             SPEC::SPEC_ID,
         );
 
-        println!("OPERATOR FEE COST: {:?}", operator_fee_cost);
-
         // Send the L1 cost of the transaction to the L1 Fee Vault.
         let mut l1_fee_vault_account = context
             .evm
